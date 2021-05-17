@@ -81,9 +81,6 @@ test.serial.cb('Should get data after data is inserted in db with query param', 
   saveData(`target:${id}`, JSON.stringify({ id, ...payload })).then(() => {
     servertest(server(), url, { encoding: 'json' }, function (err, res) {
       t.falsy(err, 'no error')
-
-      console.log('>>>>>>')
-      console.log('res.body.length', res.body)
       const responseCountGreaterThanOne = res.body.length > 0
       const expected = true
       t.is(res.statusCode, 200, 'correct statusCode')
@@ -246,7 +243,6 @@ test.serial.cb('Should throw error bad request when geoState and timestamp is no
   }
 
   function onResponse (err, res) {
-    console.log('res', res.body)
     t.falsy(err, 'no error')
     const response = res.body
     t.is(res.statusCode, 400, 'correct statusCode')
@@ -267,7 +263,6 @@ test.serial.cb('Should throw error bad request when todays timestamp is not prov
   }
 
   function onResponse (err, res) {
-    console.log('res', res.body)
     t.falsy(err, 'no error')
     const response = res.body
     t.is(res.statusCode, 400, 'correct statusCode')
@@ -306,7 +301,6 @@ test.serial.cb('Should give rejection when maxCount is reached', function (t) {
     const expected = { decision: 'reject' }
 
     function onResponse (err, res) {
-      console.log('res', res.body)
       t.falsy(err, 'no error')
       const response = res.body
       t.is(res.statusCode, 200, 'correct statusCode')
@@ -366,7 +360,6 @@ test.serial.cb('Should give another url when maxCount is reached for one', funct
       const expected = { url: 'http://example2.com' }
 
       function onResponse (err, res) {
-        console.log('res', res.body)
         t.falsy(err, 'no error')
         const response = res.body
         t.is(res.statusCode, 200, 'correct statusCode')
@@ -427,7 +420,6 @@ test.serial.cb('Should give url with high value', function (t) {
       const expected = { url: 'http://example1.com' }
 
       function onResponse (err, res) {
-        console.log('res', res.body)
         t.falsy(err, 'no error')
         const response = res.body
         t.is(res.statusCode, 200, 'correct statusCode')
@@ -464,7 +456,6 @@ test.serial.cb('Should give url with high value for first time', function (t) {
     const expected = { url: 'http://example4.com' }
 
     function onResponse (err, res) {
-      console.log('res', res.body)
       t.falsy(err, 'no error')
       const response = res.body
       t.is(res.statusCode, 200, 'correct statusCode')
@@ -508,7 +499,6 @@ test.serial.cb('Should give url with high value even though count is reached for
     const expected = { url: 'http://example5.com' }
 
     function onResponse (err, res) {
-      console.log('res', res.body)
       t.falsy(err, 'no error')
       const response = res.body
       t.is(res.statusCode, 200, 'correct statusCode')
