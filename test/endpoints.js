@@ -19,7 +19,7 @@ test.serial.cb('healthcheck', function (t) {
 })
 
 test.serial.cb('Should get empty data when no data is inserted', function (t) {
-  const url = '/targets/get'
+  const url = '/api/targets/get'
 
   servertest(server(), url, { encoding: 'json' }, function (err, res) {
     t.falsy(err, 'no error')
@@ -31,7 +31,7 @@ test.serial.cb('Should get empty data when no data is inserted', function (t) {
 })
 
 test.serial.cb('Should get data after data is inserted in db', function (t) {
-  const url = '/targets/get'
+  const url = '/api/targets/get'
   const payload = {
     url: 'http://example.com',
     value: '0.70',
@@ -61,7 +61,7 @@ test.serial.cb('Should get data after data is inserted in db', function (t) {
 })
 
 test.serial.cb('Should get data after data is inserted in db with query param', function (t) {
-  const url = '/targets/get?hour=18&&geoState=la'
+  const url = '/api/targets/get?hour=18&&geoState=la'
   const payload = {
     url: 'http://example.com',
     value: '0.70',
@@ -91,7 +91,7 @@ test.serial.cb('Should get data after data is inserted in db with query param', 
 })
 
 test.serial.cb('Should post target with URL, Value and maxAcceptsPerDay', function (t) {
-  const url = '/targets/put'
+  const url = '/api/targets/put'
   const val = {
     url: 'http://example.com',
     value: '0.70',
@@ -120,7 +120,7 @@ test.serial.cb('Should post target with URL, Value and maxAcceptsPerDay', functi
 })
 
 test.serial.cb('Should throw error when url, value and maxAcceptsPerDay is not provided', function (t) {
-  const url = '/targets/put'
+  const url = '/api/targets/put'
   const val = { }
 
   servertest(server(), url, { method: 'POST', encoding: 'json' }, onResponse)
@@ -138,7 +138,7 @@ test.serial.cb('Should throw error when url, value and maxAcceptsPerDay is not p
 })
 
 test.serial.cb('Should get 404 Error when id is not found', function (t) {
-  const url = '/targets/get/1'
+  const url = '/api/target/get/1'
 
   servertest(server(), url, { encoding: 'json' }, function (err, res) {
     t.falsy(err, 'no error')
@@ -153,7 +153,7 @@ test.serial.cb('Should get 404 Error when id is not found', function (t) {
 })
 
 test.serial.cb('Should get target when valid id is given', function (t) {
-  const url = '/targets/get/2'
+  const url = '/api/target/get/2'
   const payload = {
     url: 'http://example.com',
     value: '0.70',
@@ -183,7 +183,7 @@ test.serial.cb('Should get target when valid id is given', function (t) {
 })
 
 test.serial.cb('Should update target with URL, Value and maxAcceptsPerDay', function (t) {
-  const url = '/targets/put/2'
+  const url = '/api/target/put/2'
   const val = {
     url: 'http://example.com',
     value: '1.70',
@@ -212,7 +212,7 @@ test.serial.cb('Should update target with URL, Value and maxAcceptsPerDay', func
 })
 
 test.serial.cb('Should throw error bad request when url, value and maxAcceptsPerDay is not provided', function (t) {
-  const url = '/targets/put/2'
+  const url = '/api/target/put/2'
   const val = { }
 
   servertest(server(), url, { method: 'POST', encoding: 'json' }, onResponse)
