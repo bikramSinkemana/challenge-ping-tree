@@ -1,13 +1,14 @@
 process.env.NODE_ENV = 'test'
 
-var test = require('ava')
-var servertest = require('servertest')
-var server = require('../lib/server')
+const test = require('ava')
+const servertest = require('servertest')
+const server = require('../lib/server')
 const cuid = require('cuid')
-var { saveData, getDataById } = require('../lib/redisFunction')
+const { saveData } = require('../lib/redisFunction')
+const { getFormattedDate } = require('../lib/util/time')
 
 test.serial.cb('healthcheck', function (t) {
-  var url = '/health'
+  const url = '/health'
   servertest(server(), url, { encoding: 'json' }, function (err, res) {
     t.falsy(err, 'no error')
 
@@ -18,7 +19,7 @@ test.serial.cb('healthcheck', function (t) {
 })
 
 test.serial.cb('Should get empty data when no data is inserted', function (t) {
-  var url = '/targets/get'
+  const url = '/targets/get'
 
   servertest(server(), url, { encoding: 'json' }, function (err, res) {
     t.falsy(err, 'no error')
@@ -30,7 +31,7 @@ test.serial.cb('Should get empty data when no data is inserted', function (t) {
 })
 
 test.serial.cb('Should get data after data is inserted in db', function (t) {
-  var url = '/targets/get'
+  const url = '/targets/get'
   const payload = {
     url: 'http://example.com',
     value: '0.70',
@@ -60,7 +61,7 @@ test.serial.cb('Should get data after data is inserted in db', function (t) {
 })
 
 test.serial.cb('Should get data after data is inserted in db with query param', function (t) {
-  var url = '/targets/get?hour=18&&geoState=la'
+  const url = '/targets/get?hour=18&&geoState=la'
   const payload = {
     url: 'http://example.com',
     value: '0.70',
@@ -81,6 +82,8 @@ test.serial.cb('Should get data after data is inserted in db with query param', 
     servertest(server(), url, { encoding: 'json' }, function (err, res) {
       t.falsy(err, 'no error')
 
+      console.log('>>>>>>')
+      console.log('res.body.length', res.body)
       const responseCountGreaterThanOne = res.body.length > 0
       const expected = true
       t.is(res.statusCode, 200, 'correct statusCode')
@@ -91,8 +94,8 @@ test.serial.cb('Should get data after data is inserted in db with query param', 
 })
 
 test.serial.cb('Should post target with URL, Value and maxAcceptsPerDay', function (t) {
-  var url = '/targets/put'
-  var val = {
+  const url = '/targets/put'
+  const val = {
     url: 'http://example.com',
     value: '0.70',
     maxAcceptsPerDay: '10',
@@ -120,8 +123,8 @@ test.serial.cb('Should post target with URL, Value and maxAcceptsPerDay', functi
 })
 
 test.serial.cb('Should throw error when url, value and maxAcceptsPerDay is not provided', function (t) {
-  var url = '/targets/put'
-  var val = { }
+  const url = '/targets/put'
+  const val = { }
 
   servertest(server(), url, { method: 'POST', encoding: 'json' }, onResponse)
     .end(JSON.stringify(val))
@@ -138,7 +141,7 @@ test.serial.cb('Should throw error when url, value and maxAcceptsPerDay is not p
 })
 
 test.serial.cb('Should get 404 Error when id is not found', function (t) {
-  var url = '/targets/get/1'
+  const url = '/targets/get/1'
 
   servertest(server(), url, { encoding: 'json' }, function (err, res) {
     t.falsy(err, 'no error')
@@ -153,7 +156,7 @@ test.serial.cb('Should get 404 Error when id is not found', function (t) {
 })
 
 test.serial.cb('Should get target when valid id is given', function (t) {
-  var url = '/targets/get/2'
+  const url = '/targets/get/2'
   const payload = {
     url: 'http://example.com',
     value: '0.70',
@@ -183,8 +186,8 @@ test.serial.cb('Should get target when valid id is given', function (t) {
 })
 
 test.serial.cb('Should update target with URL, Value and maxAcceptsPerDay', function (t) {
-  var url = '/targets/put/2'
-  var val = {
+  const url = '/targets/put/2'
+  const val = {
     url: 'http://example.com',
     value: '1.70',
     maxAcceptsPerDay: '12',
@@ -212,8 +215,8 @@ test.serial.cb('Should update target with URL, Value and maxAcceptsPerDay', func
 })
 
 test.serial.cb('Should throw error bad request when url, value and maxAcceptsPerDay is not provided', function (t) {
-  var url = '/targets/put/2'
-  var val = { }
+  const url = '/targets/put/2'
+  const val = { }
 
   servertest(server(), url, { method: 'POST', encoding: 'json' }, onResponse)
     .end(JSON.stringify(val))
@@ -228,48 +231,289 @@ test.serial.cb('Should throw error bad request when url, value and maxAcceptsPer
   }
 })
 
-test.serial.cb('Should be able to save in redis', function (t) {
-  const expected = 'OK'
-  const payload = { id: 213, data: 'random data' }
+test.serial.cb('Should throw error bad request when geoState and timestamp is not provided', function (t) {
+  const url = '/route/put'
+  const val = { }
 
-  saveData('key', JSON.stringify(payload)).then(data => {
-    t.is(data, expected, 'Data Saved')
+  servertest(server(), url, { method: 'POST', encoding: 'json' }, onResponse)
+    .end(JSON.stringify(val))
+  const error = {
+    hasError: true,
+    message: {
+      geoState: 'geoState cannot be null',
+      timestamp: 'timestamp cannot be null'
+    }
+  }
+
+  function onResponse (err, res) {
+    console.log('res', res.body)
+    t.falsy(err, 'no error')
+    const response = res.body
+    t.is(res.statusCode, 400, 'correct statusCode')
+    t.deepEqual(response, error, 'Response matched')
     t.end()
-  })
+  }
 })
 
-test.serial.cb('Should throw error when payload is not given', function (t) {
-  const expected = 'key or value is missing'
+test.serial.cb('Should throw error bad request when todays timestamp is not provided', function (t) {
+  const url = '/route/put'
+  const val = { geoState: 'ca', timestamp: '2021-05-16T14:19:58Z' }
 
-  saveData().catch(err => {
-    t.is(err.message, expected, 'Error key value missing')
+  servertest(server(), url, { method: 'POST', encoding: 'json' }, onResponse)
+    .end(JSON.stringify(val))
+  const error = {
+    hasError: true,
+    message: { timestamp: 'timestamp must be todays date' }
+  }
+
+  function onResponse (err, res) {
+    console.log('res', res.body)
+    t.falsy(err, 'no error')
+    const response = res.body
+    t.is(res.statusCode, 400, 'correct statusCode')
+    t.deepEqual(response, error, 'Response matched')
     t.end()
-  })
+  }
 })
 
-test.serial.cb('Should throw error when value is not JSON', function (t) {
-  const expected = 'value must be valid JSON'
+test.serial.cb('Should give rejection when maxCount is reached', function (t) {
+  const url = '/route/put'
+  const val = { geoState: 'ca', timestamp: new Date().toISOString() }
 
-  saveData('key', 'invalid json').catch(err => {
-    t.is(err.message, expected, 'Error not valid JSON value')
-    t.end()
-  })
-})
+  const payload = {
+    url: 'http://example.com',
+    value: '0.70',
+    maxAcceptsPerDay: '10',
+    accept: {
+      geoState: {
+        $in: ['ca', 'ny']
+      },
+      hour: {
+        $in: ['13', '14', '15']
+      }
+    },
+    count: {
+      date: getFormattedDate(new Date(), 'yyyy-MM-dd'),
+      value: 10
+    }
+  }
 
-test.serial.cb('Should get data by id from redis', function (t) {
-  const payload = { id: 213, data: 'random data' }
+  // Generate unique id.
+  const id = cuid()
+  saveData(`target:${id}`, JSON.stringify({ id, ...payload })).then(() => {
+    servertest(server(), url, { method: 'POST', encoding: 'json' }, onResponse)
+      .end(JSON.stringify(val))
+    const expected = { decision: 'reject' }
 
-  saveData('key', JSON.stringify(payload)).then(() => {
-    getDataById('key').then(res => {
-      t.deepEqual(res, payload, 'data fetched')
+    function onResponse (err, res) {
+      console.log('res', res.body)
+      t.falsy(err, 'no error')
+      const response = res.body
+      t.is(res.statusCode, 200, 'correct statusCode')
+      t.deepEqual(response, expected, 'Response matched')
       t.end()
+    }
+  })
+})
+
+test.serial.cb('Should give another url when maxCount is reached for one', function (t) {
+  const url = '/route/put'
+  const val = { geoState: 'tx', timestamp: new Date().toISOString() }
+
+  const payload1 = {
+    url: 'http://example1.com',
+    value: '0.70',
+    maxAcceptsPerDay: '10',
+    accept: {
+      geoState: {
+        $in: ['tx']
+      },
+      hour: {
+        $in: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24']
+      }
+    },
+    count: {
+      date: getFormattedDate(new Date(), 'yyyy-MM-dd'),
+      value: 10
+    }
+  }
+
+  const payload2 = {
+    url: 'http://example2.com',
+    value: '0.20',
+    maxAcceptsPerDay: '10',
+    accept: {
+      geoState: {
+        $in: ['tx']
+      },
+      hour: {
+        $in: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24']
+      }
+    },
+    count: {
+      date: getFormattedDate(new Date(), 'yyyy-MM-dd'),
+      value: 5
+    }
+  }
+
+  // Generate unique id.
+  const id = cuid()
+  const id2 = cuid()
+  saveData(`target:${id}`, JSON.stringify({ id, ...payload1 })).then(() => {
+    saveData(`target:${id2}`, JSON.stringify({ id2, ...payload2 })).then(() => {
+      servertest(server(), url, { method: 'POST', encoding: 'json' }, onResponse)
+        .end(JSON.stringify(val))
+      const expected = { url: 'http://example2.com' }
+
+      function onResponse (err, res) {
+        console.log('res', res.body)
+        t.falsy(err, 'no error')
+        const response = res.body
+        t.is(res.statusCode, 200, 'correct statusCode')
+        t.deepEqual(response, expected, 'Response matched')
+        t.end()
+      }
     })
   })
 })
 
-test.serial.cb('Should give null new key not found', function (t) {
-  getDataById('randomKey').then(res => {
-    t.is(res, null, 'No data')
-    t.end()
+test.serial.cb('Should give url with high value', function (t) {
+  const url = '/route/put'
+  const val = { geoState: 'dc', timestamp: new Date().toISOString() }
+
+  const payload2 = {
+    url: 'http://example1.com',
+    value: '0.70',
+    maxAcceptsPerDay: '10',
+    accept: {
+      geoState: {
+        $in: ['dc']
+      },
+      hour: {
+        $in: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24']
+      }
+    },
+    count: {
+      date: getFormattedDate(new Date(), 'yyyy-MM-dd'),
+      value: 3
+    }
+  }
+
+  const payload1 = {
+    url: 'http://example2.com',
+    value: '0.20',
+    maxAcceptsPerDay: '10',
+    accept: {
+      geoState: {
+        $in: ['dc']
+      },
+      hour: {
+        $in: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24']
+      }
+    },
+    count: {
+      date: getFormattedDate(new Date(), 'yyyy-MM-dd'),
+      value: 5
+    }
+  }
+
+  // Generate unique id.
+  const id1 = cuid()
+  const id2 = cuid()
+  saveData(`target:${id1}`, JSON.stringify({ id: id1, ...payload1 })).then(() => {
+    saveData(`target:${id2}`, JSON.stringify({ id: id2, ...payload2 })).then(() => {
+      servertest(server(), url, { method: 'POST', encoding: 'json' }, onResponse)
+        .end(JSON.stringify(val))
+      const expected = { url: 'http://example1.com' }
+
+      function onResponse (err, res) {
+        console.log('res', res.body)
+        t.falsy(err, 'no error')
+        const response = res.body
+        t.is(res.statusCode, 200, 'correct statusCode')
+        t.deepEqual(response, expected, 'Response matched')
+        t.end()
+      }
+    })
+  })
+})
+
+test.serial.cb('Should give url with high value for first time', function (t) {
+  const url = '/route/put'
+  const val = { geoState: 'sa', timestamp: new Date().toISOString() }
+
+  const payload1 = {
+    url: 'http://example4.com',
+    value: '0.70',
+    maxAcceptsPerDay: '10',
+    accept: {
+      geoState: {
+        $in: ['sa']
+      },
+      hour: {
+        $in: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24']
+      }
+    }
+  }
+
+  // Generate unique id.
+  const id1 = cuid()
+  saveData(`target:${id1}`, JSON.stringify({ id: id1, ...payload1 })).then(() => {
+    servertest(server(), url, { method: 'POST', encoding: 'json' }, onResponse)
+      .end(JSON.stringify(val))
+    const expected = { url: 'http://example4.com' }
+
+    function onResponse (err, res) {
+      console.log('res', res.body)
+      t.falsy(err, 'no error')
+      const response = res.body
+      t.is(res.statusCode, 200, 'correct statusCode')
+      t.deepEqual(response, expected, 'Response matched')
+      t.end()
+    }
+  })
+})
+
+test.serial.cb('Should give url with high value even though count is reached for max for previous day', function (t) {
+  const url = '/route/put'
+  const val = { geoState: 'test', timestamp: new Date().toISOString() }
+
+  const yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 1)
+  yesterday.toISOString()
+
+  const payload1 = {
+    url: 'http://example5.com',
+    value: '0.70',
+    maxAcceptsPerDay: '10',
+    accept: {
+      geoState: {
+        $in: ['test']
+      },
+      hour: {
+        $in: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24']
+      }
+    },
+    count: {
+      date: getFormattedDate(yesterday, 'yyyy-MM-dd'),
+      value: 10
+    }
+  }
+
+  // Generate unique id.
+  const id1 = cuid()
+  saveData(`target:${id1}`, JSON.stringify({ id: id1, ...payload1 })).then(() => {
+    servertest(server(), url, { method: 'POST', encoding: 'json' }, onResponse)
+      .end(JSON.stringify(val))
+    const expected = { url: 'http://example5.com' }
+
+    function onResponse (err, res) {
+      console.log('res', res.body)
+      t.falsy(err, 'no error')
+      const response = res.body
+      t.is(res.statusCode, 200, 'correct statusCode')
+      t.deepEqual(response, expected, 'Response matched')
+      t.end()
+    }
   })
 })
