@@ -436,7 +436,32 @@ test.serial.cb('Should give rejection when maxCount is reached', function (t) {
         $in: ['ca', 'ny']
       },
       hour: {
-        $in: ['13', '14', '15']
+        $in: [
+          '1',
+          '2',
+          '3',
+          '4',
+          '5',
+          '6',
+          '7',
+          '8',
+          '9',
+          '10',
+          '11',
+          '12',
+          '13',
+          '14',
+          '15',
+          '16',
+          '17',
+          '18',
+          '19',
+          '20',
+          '21',
+          '22',
+          '23',
+          '24'
+        ]
       }
     },
     count: {
@@ -590,8 +615,8 @@ test.serial.cb('Should give url with high value', function (t) {
   const val = { geoState: 'dc', timestamp: new Date().toISOString() }
 
   const payload2 = {
-    url: 'http://example1.com',
-    value: '0.70',
+    url: 'http://urlWithHighValue.com',
+    value: '1.70',
     maxAcceptsPerDay: '10',
     accept: {
       geoState: {
@@ -688,7 +713,7 @@ test.serial.cb('Should give url with high value', function (t) {
             { method: 'POST', encoding: 'json' },
             onResponse
           ).end(JSON.stringify(val))
-          const expected = { url: 'http://example1.com' }
+          const expected = { url: 'http://urlWithHighValue.com' }
 
           function onResponse (err, res) {
             t.falsy(err, 'no error')
@@ -709,7 +734,7 @@ test.serial.cb('Should give url with high value for first time', function (t) {
 
   const payload1 = {
     url: 'http://example4.com',
-    value: '0.70',
+    value: '1.80',
     maxAcceptsPerDay: '10',
     accept: {
       geoState: {
@@ -781,7 +806,7 @@ test.serial.cb(
 
     const payload1 = {
       url: 'http://example5.com',
-      value: '0.70',
+      value: '2.70',
       maxAcceptsPerDay: '10',
       accept: {
         geoState: {
